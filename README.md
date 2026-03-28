@@ -58,3 +58,7 @@ The current contract establishes a minimal, secure governance primitive. The fol
 - **Delegation / liquid democracy** — Enable members to delegate their voting power to a trusted representative for any proposal they choose not to vote on directly.
 - **Multi-sig admin roles** — Distribute the finalisation authority across a council of key holders, removing the single-point-of-failure risk inherent in a sole admin key.
 - **Global proposal stats** — Re-introduce an aggregate dashboard tracking total, active, passed, and rejected proposal counts once compilation constraints are lifted.
+
+## Contract Details:
+Contract ID: CCHESM4RJ47Z64WLYK3IW3SQIFJLAJUE7LCJ74J4LFJYN4EDDZAJR2UH
+<img width="1625" height="702" alt="image" src="https://github.com/user-attachments/assets/5d6c68fb-54cd-4f82-8374-5a9a1799df03" />
