@@ -5,7 +5,7 @@ import {
   signTransaction as freighterSignTransaction,
 } from "@stellar/freighter-api";
 
-export const CONTRACT_ADDRESS = "CBHCJZFQETIEXYT3XLF6MXWIQVSJB6OVAODBERETTQA3GOWHPZHJQNPW";
+export const CONTRACT_ADDRESS = "CCHVWSKJW2RXRPQIXB5UL5EKF3ORGKZSJANDTVVESIHWRBFH3ZJ3RTOH";
 
 const RPC_URL        = "https://soroban-testnet.stellar.org";
 const NETWORK_PASSPH = "Test SDF Network ; September 2015";
@@ -59,7 +59,8 @@ const invokeContract = async (publicKey, method, params = []) => {
   const returnValue = simResult.result?.retval ?? null;
 
   // Assemble, sign, submit
-  const preparedTx = StellarSdk.rpc.assembleTransaction(tx, simResult).build();
+
+  const preparedTx = StellarSdk.rpc.assembleTransaction(tx, simResult).build(); 
 
   const signedTxXdr = await freighterSignTransaction(preparedTx.toXDR(), {
     network: NETWORK_NAME,
@@ -113,10 +114,9 @@ const simulateOnly = async (method, params = []) => {
 
 export const createProposal = async (publicKey, title, descrip) => {
   const retval = await invokeContract(publicKey, "create_proposal", [
-    StellarSdk.nativeToScVal(title),
-    StellarSdk.nativeToScVal(descrip),
+    StellarSdk.nativeToScVal(title, { type: "string" }),
+    StellarSdk.nativeToScVal(descrip, { type: "string" }),
   ]);
-  // retval is scvU64 — convert to Number for display
   return Number(StellarSdk.scValToNative(retval));
 };
 
@@ -138,11 +138,25 @@ export const viewProposal = async (proposalId) => {
   const simResult = await simulateOnly("view_proposal", [
     StellarSdk.nativeToScVal(BigInt(proposalId), { type: "u64" }),
   ]);
+
+  if (!simResult.result || !simResult.result.retval) {
+    throw new Error("Proposal not found or simulation failed.");
+  }
+
   const raw = StellarSdk.scValToNative(simResult.result.retval);
+
+  // Helper to safely decode Soroban Strings (Uint8Array) back to JS Strings
+  const decodeString = (val) => {
+    if (!val) return "";
+    if (typeof val === "string") return val; // Just in case it's already a string
+    if (val instanceof Uint8Array) return new TextDecoder().decode(val);
+    return val.toString(); // Fallback for Buffers
+  };
+
   return {
     id:            Number(raw.id),
-    title:         raw.title,
-    descrip:       raw.descrip,
+    title:         decodeString(raw.title),
+    descrip:       decodeString(raw.descrip),
     votes_for:     Number(raw.votes_for),
     votes_against: Number(raw.votes_against),
     is_active:     raw.is_active,

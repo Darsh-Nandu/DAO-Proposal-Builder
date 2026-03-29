@@ -272,7 +272,9 @@ stellar contract invoke \
 
 ## Deployed Smart Contract Address
 
-`YOUR_DEPLOYED_CONTRACT_ADDRESS_HERE`
+`CCHVWSKJW2RXRPQIXB5UL5EKF3ORGKZSJANDTVVESIHWRBFH3ZJ3RTOH`
+
+## Frontend Image
 
 ---
 
