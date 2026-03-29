@@ -18,21 +18,26 @@ pub enum Datakey {
     Proposal(u64),
 }
 
-const COUNT: Symbol = symbol_short!("COUNT");
-
 #[contract]
 pub struct DAOContract;
 
 #[contractimpl]
 impl DAOContract {
 
-    // Creates a new proposal and returns its ID
+    // Creates a new proposal using ledger sequence as unique ID
     pub fn create_proposal(env: Env, title: String, descrip: String) -> u64 {
-        let mut count: u64 = env.storage().instance().get(&COUNT).unwrap_or(0);
-        count += 1;
+        let id: u64 = env.ledger().sequence() as u64;
+
+        // Safety check — extremely unlikely but just in case
+        if env.storage().instance()
+            .get::<_, Proposal>(&Datakey::Proposal(id))
+            .is_some()
+        {
+            panic!("Proposal already exists at this ledger sequence");
+        }
 
         let proposal = Proposal {
-            id: count,
+            id,
             title,
             descrip,
             votes_for: 0,
@@ -40,12 +45,11 @@ impl DAOContract {
             is_active: true,
         };
 
-        env.storage().instance().set(&Datakey::Proposal(count), &proposal);
-        env.storage().instance().set(&COUNT, &count);
+        env.storage().instance().set(&Datakey::Proposal(id), &proposal);
         env.storage().instance().extend_ttl(5000, 5000);
 
-        log!(&env, "Proposal created: {}", count);
-        count
+        log!(&env, "Proposal created with ID: {}", id);
+        id
     }
 
     // Cast a vote: true = YES, false = NO
@@ -58,7 +62,11 @@ impl DAOContract {
             panic!("Voting is closed");
         }
 
-        if vote_for { p.votes_for += 1; } else { p.votes_against += 1; }
+        if vote_for {
+            p.votes_for += 1;
+        } else {
+            p.votes_against += 1;
+        }
 
         env.storage().instance().set(&Datakey::Proposal(id), &p);
         env.storage().instance().extend_ttl(5000, 5000);
@@ -71,7 +79,9 @@ impl DAOContract {
             .get(&Datakey::Proposal(id))
             .unwrap_or_else(|| panic!("Proposal not found"));
 
-        if !p.is_active { panic!("Already finalised"); }
+        if !p.is_active {
+            panic!("Already finalised");
+        }
 
         p.is_active = false;
         let passed = p.votes_for > p.votes_against;
@@ -83,7 +93,8 @@ impl DAOContract {
 
     // View a proposal by ID
     pub fn view_proposal(env: Env, id: u64) -> Proposal {
-        env.storage().instance().get(&Datakey::Proposal(id))
+        env.storage().instance()
+            .get(&Datakey::Proposal(id))
             .unwrap_or(Proposal {
                 id: 0,
                 title: String::from_str(&env, "Not_Found"),
